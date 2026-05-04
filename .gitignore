@@ -21,3 +21,5 @@ env/
 .env
 
 config.yaml
+
+profile.json

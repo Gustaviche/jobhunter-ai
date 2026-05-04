@@ -1,6 +1,8 @@
 import pandas as pd
 import streamlit as st
+import json
 
+from pathlib import Path
 from modules.cover_letter import generate_cover_message
 from modules.job_scraper import extract_job_from_url
 from modules.auth import get_authenticator, load_config, register_user
@@ -14,6 +16,13 @@ from modules.database import (
     add_cover_message_column,
     update_cover_message,
     delete_job,
+)
+from modules.profile import (
+    load_profile,
+    save_profile,
+    extract_text_from_pdf,
+    create_profile_from_cv_text,
+    format_profile,
 )
 
 # =========================
@@ -73,12 +82,14 @@ with st.sidebar:
         menu_title="🎯 JobHunter AI",
         options=[
             "Dashboard",
+            "Profil candidat",
             "Importer par URL",
             "Ajouter une offre",
             "Mes offres",
         ],
         icons=[
             "house",
+            "person",
             "globe",
             "plus-circle",
             "folder",
@@ -146,6 +157,71 @@ if selection == "Dashboard":
     else:
         st.info("Aucune offre enregistrée pour le moment.")
 
+# =========================
+# PROFIL CANDIDAT
+# =========================
+elif selection == "Profil candidat":
+    st.header("Profil candidat")
+
+    profile = load_profile(username)
+
+    st.subheader("Importer un CV")
+
+    uploaded_file = st.file_uploader("Importer un CV PDF", type=["pdf"])
+
+    if uploaded_file and st.button("Importer le CV dans le profil"):
+        with st.spinner("Lecture du CV..."):
+            cv_text = extract_text_from_pdf(uploaded_file)
+
+            if len(cv_text.strip()) < 50:
+                st.error("Impossible de lire correctement le CV.")
+                st.stop()
+
+            auto_profile = create_profile_from_cv_text(cv_text)
+            save_profile(username, auto_profile)
+
+        st.success("CV importé dans le profil")
+        st.rerun()
+
+    st.divider()
+
+    with st.form("profile_form"):
+        st.subheader("Informations personnelles")
+
+        full_name = st.text_input("Nom complet", profile.get("full_name", ""))
+        target_job = st.text_input("Poste recherché", profile.get("target_job", ""))
+        location = st.text_input("Localisation", profile.get("location", ""))
+        availability = st.text_input("Disponibilité", profile.get("availability", ""))
+
+        education = st.text_area("Formation", profile.get("education", ""))
+        skills = st.text_area("Compétences", profile.get("skills", ""))
+        experiences = st.text_area("Expériences", profile.get("experiences", ""))
+        projects = st.text_area("Projets", profile.get("projects", ""))
+        summary = st.text_area(
+            "Profil / CV importé",
+            profile.get("summary", ""),
+            height=300
+        )
+
+        submitted = st.form_submit_button("Enregistrer")
+
+    if submitted:
+        data = {
+            "full_name": full_name,
+            "target_job": target_job,
+            "location": location,
+            "availability": availability,
+            "education": education,
+            "skills": skills,
+            "experiences": experiences,
+            "projects": projects,
+            "summary": summary,
+        }
+
+        save_profile(username, data)
+
+        st.success("Profil enregistré")
+        st.rerun()
 # =========================
 # IMPORT PAR URL
 # =========================
@@ -286,7 +362,7 @@ elif selection == "Mes offres":
             ],
         )
 
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df, width="stretch")
 
         st.subheader("Voir le détail d'une offre")
 
@@ -337,9 +413,18 @@ elif selection == "Mes offres":
 
             if st.button("Générer un message de candidature"):
                 with st.spinner("Génération du message..."):
-                    message = generate_cover_message(title, company, description)
-                    update_cover_message(job_id, message, username)
+                    raw_profile = load_profile(username)  # 👈 récupère le JSON
+                    profile = format_profile(raw_profile) 
 
+                    message = generate_cover_message(
+                        profile,  # 👈 AJOUT
+                        title,
+                        company,
+                        description
+                    )
+
+                update_cover_message(job_id, message, username)
+                print(message)
                 st.success("Message enregistré.")
                 st.rerun()
 
