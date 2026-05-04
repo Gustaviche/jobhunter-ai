@@ -424,7 +424,6 @@ elif selection == "Mes offres":
                     )
 
                 update_cover_message(job_id, message, username)
-                print(message)
                 st.success("Message enregistré.")
                 st.rerun()
 
