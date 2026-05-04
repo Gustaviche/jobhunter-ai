@@ -1,8 +1,10 @@
-import streamlit as st
 import pandas as pd
+import streamlit as st
 
+from modules.cover_letter import generate_cover_message
+from modules.job_scraper import extract_job_from_url
+from modules.auth import get_authenticator, load_config, register_user
 from streamlit_option_menu import option_menu
-
 from modules.database import (
     init_db,
     add_job,
@@ -14,15 +16,49 @@ from modules.database import (
     delete_job,
 )
 
-from modules.cover_letter import generate_cover_message
-from modules.job_scraper import extract_job_from_url
-
-
 # =========================
 # CONFIG
 # =========================
 
-st.set_page_config(page_title="JobHunter AI", page_icon="🎯", layout="wide")
+st.set_page_config(page_title="JobHunter AI", page_icon="🎯")
+
+config = load_config()
+authenticator = get_authenticator(config)
+
+if not st.session_state.get("authentication_status"):
+    auth_mode = st.radio(
+        "Choisis une action",
+        ["Connexion", "Inscription"],
+        horizontal=True,
+    )
+
+    if auth_mode == "Connexion":
+        authenticator.login(
+            location="main",
+            fields={
+                "Form name": "Connexion",
+                "Username": "Nom d'utilisateur",
+                "Password": "Mot de passe",
+                "Login": "Se connecter",
+            },
+        )
+
+    elif auth_mode == "Inscription":
+        register_user(authenticator, config)
+        st.stop()
+
+if st.session_state.get("authentication_status") is False:
+    st.error("Identifiant ou mot de passe incorrect")
+    st.stop()
+
+if st.session_state.get("authentication_status") is None:
+    st.warning("Connecte-toi pour accéder à JobHunter AI")
+    st.stop()
+
+authenticator.logout("Déconnexion", "sidebar")
+st.sidebar.success(f"Connecté : {st.session_state.get('name')}")
+
+username = st.session_state["username"]
 
 init_db()
 add_cover_message_column()
@@ -71,7 +107,7 @@ st.divider()
 if selection == "Dashboard":
     st.header("Dashboard")
 
-    jobs = get_jobs()
+    jobs = get_jobs(username)
 
     if jobs:
         df = pd.DataFrame(
@@ -183,6 +219,7 @@ elif selection == "Importer par URL":
                 imported_contract_type,
                 imported_url,
                 imported_description,
+                username
             )
 
             del st.session_state["imported_job"]
@@ -220,6 +257,7 @@ elif selection == "Ajouter une offre":
             contract_type,
             url,
             description,
+            username
         )
 
         st.success("Offre ajoutée.")
@@ -232,7 +270,7 @@ elif selection == "Ajouter une offre":
 elif selection == "Mes offres":
     st.header("Mes offres")
 
-    jobs = get_jobs()
+    jobs = get_jobs(username)
 
     if jobs:
         df = pd.DataFrame(
@@ -257,7 +295,7 @@ elif selection == "Mes offres":
             df["ID"].tolist(),
         )
 
-        selected_job = get_job_by_id(selected_id)
+        selected_job = get_job_by_id(selected_id, username)
 
         if selected_job:
             (
@@ -300,7 +338,7 @@ elif selection == "Mes offres":
             if st.button("Générer un message de candidature"):
                 with st.spinner("Génération du message..."):
                     message = generate_cover_message(title, company, description)
-                    update_cover_message(job_id, message)
+                    update_cover_message(job_id, message, username)
 
                 st.success("Message enregistré.")
                 st.rerun()
@@ -323,14 +361,14 @@ elif selection == "Mes offres":
             )
 
             if st.button("Mettre à jour le statut"):
-                update_job_status(job_id, new_status)
+                update_job_status(job_id, new_status, username)
                 st.success("Statut mis à jour.")
                 st.rerun()
 
             st.markdown("### Supprimer l'offre")
 
             if st.button("🗑️ Supprimer cette offre"):
-                delete_job(job_id)
+                delete_job(job_id, username)
                 st.success("Offre supprimée.")
                 st.rerun()
 

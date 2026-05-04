@@ -1,0 +1,39 @@
+cookie:
+  expiry_days: 30
+  key: jobhunter_signature_key
+  name: jobhunter_cookie
+credentials:
+  usernames:
+    algaumon:
+      email: agauthiermontan@gmail.com
+      first_name: Alexandre
+      last_name: Gauthier-Montan
+      password: $2b$12$cueeAEiWkcQlXLyMw//r..Ryaa0VdiaCIku4K7LnGvKrPjznPSzC.
+      roles:
+      - admin
+    gogogo:
+      email: captainmustache@outlook.fr
+      first_name: Alex
+      last_name: andre
+      logged_in: false
+      password: $2b$12$iSqdAYTAsbXvRh1al6PMQuTJNWF/7aDHq0KEXDusve6NkenGkNaQu
+      roles:
+      - user
+    loki:
+      email: sergentfrite@outlook.COM
+      first_name: caca
+      last_name: prout
+      logged_in: false
+      password: $2b$12$/sU71CWn9LHFmYdLmdV9/.TQWGQ2rspfn0mtS/Y7lXKwd90n6TwB6
+      roles:
+      - user
+    pipi:
+      email: sergentfrite@outlook.fr
+      first_name: caca
+      last_name: prout
+      logged_in: false
+      password: $2b$12$FlrpfBavTS.H2tVGrHCLjuPjFsR.UHR1iD9TKR1XLa/ZaTZiNqycK
+      roles:
+      - user
+preauthorized:
+  emails: []

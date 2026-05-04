@@ -20,38 +20,39 @@ def init_db():
             url TEXT,
             description TEXT,
             status TEXT DEFAULT 'À postuler',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            username TEXT       )
     """)
 
     conn.commit()
     conn.close()
 
 
-def add_job(title, company, location, contract_type, url, description):
+def add_job(title, company, location, contract_type, url, description,username):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
         INSERT INTO jobs (
-            title, company, location, contract_type, url, description
+            title, company, location, contract_type, url, description, username
         )
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (title, company, location, contract_type, url, description))
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (title, company, location, contract_type, url, description, username))
 
     conn.commit()
     conn.close()
 
 
-def get_jobs():
+def get_jobs(username):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
         SELECT id, title, company, location, contract_type, status, created_at
         FROM jobs
+        WHERE username = ?
         ORDER BY created_at DESC
-    """)
+    """, (username,))
 
     jobs = cursor.fetchall()
     conn.close()
@@ -60,30 +61,30 @@ def get_jobs():
 
     return jobs
 
-def get_job_by_id(job_id):
+def get_job_by_id(job_id, username):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
         SELECT id, title, company, location, contract_type, url, description, status, created_at, cover_message
         FROM jobs
-        WHERE id = ?
-    """, (job_id,))
+        WHERE id = ? AND username = ?
+    """, (job_id, username))
 
     job = cursor.fetchone()
     conn.close()
 
     return job
 
-def update_job_status(job_id, status):
+def update_job_status(job_id, status,username):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
         UPDATE jobs
         SET status = ?
-        WHERE id = ?
-    """, (status, job_id))
+        WHERE id = ? AND username = ?
+    """, (status, job_id, username))
 
     conn.commit()
     conn.close()
@@ -101,27 +102,28 @@ def add_cover_message_column():
     conn.close()
 
 
-def update_cover_message(job_id, cover_message):
+def update_cover_message(job_id, cover_message,username):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
         UPDATE jobs
         SET cover_message = ?
-        WHERE id = ?
-    """, (cover_message, job_id))
+        WHERE id = ? AND username = ?
+    """, (cover_message, job_id, username))
 
     conn.commit()
     conn.close()
 
-def delete_job(job_id):
+def delete_job(job_id, username):
+
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
         DELETE FROM jobs
-        WHERE id = ?
-    """, (job_id,))
+        WHERE id = ? AND username = ?
+    """, (job_id, username))
 
     conn.commit()
     conn.close()
