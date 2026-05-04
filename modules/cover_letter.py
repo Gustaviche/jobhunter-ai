@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from config import MODEL_FAST, MAX_DESCRIPTION_CHARS
-from modules.ollama_client import call_ollama
+from config import MAX_DESCRIPTION_CHARS
+from modules.openrouter_client import call_openrouter
 
 
 def generate_cover_message(profile, title, company, description):
@@ -33,9 +33,9 @@ Contraintes :
 - finir par une ouverture à l’échange
 """
 
-    return call_ollama(
-        prompt=prompt,
-        model=MODEL_FAST,
-        temperature=0.4,
-        max_tokens=1000,
-    )
+    return call_openrouter(
+    prompt=prompt,
+    model="openrouter/free",
+    temperature=0.4,
+    max_tokens=2500,
+)

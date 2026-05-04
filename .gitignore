@@ -22,4 +22,8 @@ env/
 
 config.yaml
 
-profile.json
+data
+
+.streamlit/secrets.toml
+
+.devcontainer
